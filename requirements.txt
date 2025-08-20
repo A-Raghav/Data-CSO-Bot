@@ -2,5 +2,6 @@ google-genai==1.29.0
 langchain-google-genai==2.1.9
 langgraph==0.6.4
 "bm25s[full]"
-PyStemmer
+PyStemmer==3.0.0
 "jax[cpu]"
+faiss-cpu==1.12.0
