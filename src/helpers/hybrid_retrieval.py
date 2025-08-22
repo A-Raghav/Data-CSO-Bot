@@ -3,8 +3,18 @@ import bm25s
 import Stemmer
 import pandas as pd
 from google.genai import types
+from pydantic import BaseModel, Field
 from langchain_community.vectorstores import FAISS
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+
+
+class TableSelectionSubclass(BaseModel):
+    table_id: str = Field(description="Table ID.")
+    explanation: str = Field(description="Concise 1-liner explanation behind why this table is relevant.")
+
+
+class TableSelection(BaseModel):
+    relevant_tables: list[TableSelectionSubclass] = Field(description="List of relevant tables with explanations.")
 
 
 class HybridRetrieval:
@@ -13,6 +23,7 @@ class HybridRetrieval:
         self.top_k_stage_2 = top_k_stage_2
         self._instantiate_stage_1()
         self._instantiate_stage_2()
+        self._instantiate_stage_3()
 
     def _instantiate_stage_1(self):
         self.stemmer = Stemmer.Stemmer("english")
@@ -34,6 +45,32 @@ class HybridRetrieval:
             embeddings=embeddings,
             allow_dangerous_deserialization=True
         )
+    
+    def _instantiate_stage_3(self):
+        self.llm_med = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            temperature=1,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+        )
+
+    def _create_context(self, table_ids: list) -> str:
+        context = []
+        for table_id in table_ids:
+            doc = self.vector_store.docstore.search(table_id)
+            sample_questions_str = "\n  - ".join(doc.metadata["sample_questions"])
+            text_chunk_list = [
+                f"**Table ID**: {doc.id}",
+                f"**Table Name (and Category)**: {doc.metadata['table_name']} ({doc.metadata['subject']}: {doc.metadata['product']})",
+                f"**Table Summary**: {doc.metadata['description']}",
+                f"**Fields**: {', '.join(doc.metadata['columns'])}",
+                f"**Sample Questions**:",
+                f"  - {sample_questions_str}"
+            ]
+            text_chunk = "\n".join(text_chunk_list)
+            context.append(text_chunk)
+        return "\n\n".join(context)
 
     def search(self, query: str):
         # Stage 1: Lexical Search
@@ -59,11 +96,32 @@ class HybridRetrieval:
         # Convert to pandas dataframe
         ids = list(stage_1_results.keys())
 
-        # return stage_1_results, stage_2_results, docs_with_scores
         records = {
             "id": ids,
             "stage_1_score": [stage_1_results[id] for id in ids],
             "stage_2_score": [stage_2_results.get(id, 0) for id in ids],
         }
+        df = pd.DataFrame(records)
+        top_20_relevant_ids = df.sort_values(by="stage_2_score", ascending=True)[:20]["id"].tolist()
 
-        return pd.DataFrame(records)# , stage_1_results, stage_2_results
+        if not top_20_relevant_ids:
+            return []
+
+        # Stage 3: LLM based relevant-table selection
+        context = self._create_context(top_20_relevant_ids)
+        prompt_list = [
+            "Given the following tables context, select up to 3 of the possible relevant tables based on the question asked.",
+            "",
+            "Table context:",
+            context,
+            "",
+            "question: " + query,
+        ]
+        prompt = "\n".join(prompt_list)
+        response = self.llm_med.with_structured_output(TableSelection).invoke(prompt)
+        response_dict = response.model_dump()
+        relevant_tables_ids = [
+            item["table_id"] for item in response_dict["relevant_tables"]
+        ]
+
+        return relevant_tables_ids
