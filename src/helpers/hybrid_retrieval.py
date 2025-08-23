@@ -49,7 +49,7 @@ class HybridRetrieval:
     def _instantiate_stage_3(self):
         self.llm_med = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
-            temperature=1,
+            temperature=0.5,
             max_tokens=None,
             timeout=None,
             max_retries=2,
@@ -110,7 +110,7 @@ class HybridRetrieval:
         # Stage 3: LLM based relevant-table selection
         context = self._create_context(top_20_relevant_ids)
         prompt_list = [
-            "Given the following tables context, select up to 3 of the possible relevant tables based on the question asked.",
+            "Given the following tables context, select up to 5 of the possible relevant tables based on the question asked.",
             "",
             "Table context:",
             context,
