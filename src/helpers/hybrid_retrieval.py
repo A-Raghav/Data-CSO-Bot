@@ -65,6 +65,7 @@ class HybridRetrieval:
                 f"**Table Name (and Category)**: {doc.metadata['table_name']} ({doc.metadata['subject']}: {doc.metadata['product']})",
                 f"**Table Summary**: {doc.metadata['description']}",
                 f"**Fields**: {', '.join(doc.metadata['columns'])}",
+                f"**Statistics**: {', '.join(doc.metadata['statistics_units'])}",
                 f"**Sample Questions**:",
                 f"  - {sample_questions_str}"
             ]
@@ -79,6 +80,7 @@ class HybridRetrieval:
         stage_1_results = {
             doc["id"] : float(score) for doc, score in zip(docs[0], scores[0])
         }
+        print(f"HYBRID_RETRIEVAL_ENGINE: Stage 1 retrieved {len(stage_1_results)} documents. [{list(stage_1_results.keys())}]")
 
         # Stage 2: Semantic Search
         very_high_integer = 10000000 # total number of docs is ~80K, 10M limit set.
@@ -92,6 +94,7 @@ class HybridRetrieval:
         stage_2_results = {
             doc.metadata["id"]: float(score) for doc, score in docs_with_scores
         }
+        print(f"HYBRID_RETRIEVAL_ENGINE: Stage 2 retrieved {len(stage_2_results)} documents. [{list(stage_2_results.keys())}]")
 
         # Convert to pandas dataframe
         ids = list(stage_1_results.keys())
@@ -110,12 +113,12 @@ class HybridRetrieval:
         # Stage 3: LLM based relevant-table selection
         context = self._create_context(top_20_relevant_ids)
         prompt_list = [
-            "Given the following tables context, select up to 5 of the possible relevant tables based on the question asked.",
+            "#GOAL: Given the following tables context, select up to 5 of the possible relevant tables based on the question asked.",
             "",
-            "Table context:",
+            "# TABLE CONTEXT:",
             context,
             "",
-            "question: " + query,
+            "# QUESTION: " + query,
         ]
         prompt = "\n".join(prompt_list)
         response = self.llm_med.with_structured_output(TableSelection).invoke(prompt)
@@ -123,5 +126,6 @@ class HybridRetrieval:
         relevant_tables_ids = [
             item["table_id"] for item in response_dict["relevant_tables"]
         ]
+        print(f"HYBRID_RETRIEVAL_ENGINE: Stage 3 retrieved {len(relevant_tables_ids)} documents [{relevant_tables_ids}]")
 
         return relevant_tables_ids
