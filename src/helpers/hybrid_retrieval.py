@@ -80,7 +80,6 @@ class HybridRetrieval:
         stage_1_results = {
             doc["id"] : float(score) for doc, score in zip(docs[0], scores[0])
         }
-        print(f"HYBRID_RETRIEVAL_ENGINE: Stage 1 retrieved {len(stage_1_results)} documents. [{list(stage_1_results.keys())}]")
 
         # Stage 2: Semantic Search
         very_high_integer = 10000000 # total number of docs is ~80K, 10M limit set.
@@ -94,7 +93,6 @@ class HybridRetrieval:
         stage_2_results = {
             doc.metadata["id"]: float(score) for doc, score in docs_with_scores
         }
-        print(f"HYBRID_RETRIEVAL_ENGINE: Stage 2 retrieved {len(stage_2_results)} documents. [{list(stage_2_results.keys())}]")
 
         # Convert to pandas dataframe
         ids = list(stage_1_results.keys())
@@ -126,6 +124,5 @@ class HybridRetrieval:
         relevant_tables_ids = [
             item["table_id"] for item in response_dict["relevant_tables"]
         ]
-        print(f"HYBRID_RETRIEVAL_ENGINE: Stage 3 retrieved {len(relevant_tables_ids)} documents [{relevant_tables_ids}]")
 
         return relevant_tables_ids
