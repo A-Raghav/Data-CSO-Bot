@@ -3,3 +3,4 @@
 *.pyc
 **/cache/**
 **/__pycache__/**
+**/.chainlit/
