@@ -1,7 +1,7 @@
 from textwrap import dedent
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
-from src.graphs.llms.gemini import llm_med
+from src.graphs.llms.gemini import get_llm
 from src.models.graph_states import AnalystSubgraphState
 from src.graphs.tools.analyst_tools import python_code_executor
 
@@ -34,7 +34,8 @@ SYSTEM_PROMPT_ANALYST = dedent(
 
 TOOLS = [python_code_executor]
 
-llm_med_with_code_exec_tool = llm_med.bind_tools(
+llm = get_llm(model="gemini-2.5-flash")
+llm_with_code_exec_tool = llm.bind_tools(
     tools=TOOLS,
     allowed_function_names=["python_code_executor"]
 )
@@ -69,10 +70,10 @@ def analyst_node(state: AnalystSubgraphState) -> str:
         
         if iters <= 10:
             # print("Running data-analyst agent...")
-            res = llm_med_with_code_exec_tool.invoke(msgs)
+            res = llm_with_code_exec_tool.invoke(msgs)
         else:
             # print("Stopping tool-calls as max-iterations reached. Generating final response...")
-            res = llm_med.invoke(msgs)
+            res = llm.invoke(msgs)
             return {"messages": [res], "iters": iters, "context": context, "report": report}
 
         if isinstance(res, AIMessage):

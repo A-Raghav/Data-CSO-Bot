@@ -15,12 +15,12 @@ from src.utils.analyse_table import create_table_analysis
 from src.retrieval.hybrid_retrieval import HybridRetrieval
 from src.models.structured_outputs import AnalysisPlanSubModel
 from src.graphs.analyst_graph import analyst_graph
-from src.graphs.llms.gemini import llm_med
+from src.graphs.llms.gemini import get_llm
 
 
 retriever = HybridRetrieval(top_k_stage_1=200, top_k_stage_2=20)
 cso_archive_reader = JSONStatArchiveDB(compression_level=12)
-
+llm = get_llm(model="gemini-2.5-flash")
 
 @tool("hybrid_retrieval_tool", parse_docstring=True)
 def hybrid_retrieval_tool(
@@ -92,7 +92,7 @@ def hybrid_retrieval_tool(
             human_message = f"Question : {user_prompt}\n\n Context:\n{context}"
             inputs.append((SystemMessage(content=system_message, name="planner_agent"), HumanMessage(content=human_message, name="user")))
 
-        msgs = llm_med.with_structured_output(AnalysisPlanSubModel).batch(inputs)
+        msgs = llm.with_structured_output(AnalysisPlanSubModel).batch(inputs)
         res_list = [msg.model_dump() for msg in msgs]
 
         # print(f"HYBRID_RETRIEVAL_TOOL: Planner agent created analysis plans for {len(res_list)} tables.")

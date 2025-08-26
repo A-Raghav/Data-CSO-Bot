@@ -3,13 +3,14 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 from src.utils.text_coercion import coerce_ai_to_text
 from src.utils.check_tool_calls import has_tool_calls
-from src.graphs.llms.gemini import llm_med
+from src.graphs.llms.gemini import get_llm
 from src.models.graph_states import ParentState
 from src.graphs.tools.reviewer_tools import hybrid_retrieval_tool, data_analyst_tool, provenance_tool
 
 
 TOOLS = [hybrid_retrieval_tool, data_analyst_tool, provenance_tool]
-llm_med_with_tools_poc = llm_med.bind_tools(TOOLS)
+llm = get_llm(model="gemini-2.5-flash-lite")
+llm_with_tools_poc = llm.bind_tools(TOOLS)
 
 reviewer_system_prompt = dedent(
     """\
@@ -44,7 +45,7 @@ def reviewer_agent(state: ParentState):
 
         response["question"] = messages[-1].content
     
-    res = llm_med_with_tools_poc.invoke(
+    res = llm_with_tools_poc.invoke(
         [SystemMessage(content=reviewer_system_prompt, name="reviewer_agent")] + messages,
         config={"response_mime_type": "text/plain"},
 

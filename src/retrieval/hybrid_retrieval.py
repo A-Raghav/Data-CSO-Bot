@@ -5,7 +5,8 @@ import pandas as pd
 from google.genai import types
 from pydantic import BaseModel, Field
 from langchain_community.vectorstores import FAISS
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from src.graphs.llms.gemini import get_llm
 
 
 class TableSelectionSubclass(BaseModel):
@@ -47,13 +48,7 @@ class HybridRetrieval:
         )
     
     def _instantiate_stage_3(self):
-        self.llm_med = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
-            temperature=0.5,
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
-        )
+        self.llm = get_llm(model="gemini-2.5-flash-lite")
 
     def _create_context(self, table_ids: list) -> str:
         context = []
@@ -119,7 +114,7 @@ class HybridRetrieval:
             "# QUESTION: " + query,
         ]
         prompt = "\n".join(prompt_list)
-        response = self.llm_med.with_structured_output(TableSelection).invoke(prompt)
+        response = self.llm.with_structured_output(TableSelection).invoke(prompt)
         response_dict = response.model_dump()
         relevant_tables_ids = [
             item["table_id"] for item in response_dict["relevant_tables"]
