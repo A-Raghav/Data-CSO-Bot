@@ -67,24 +67,24 @@ async def run_app():
             return [
                 cl.Starter(
                     label="Unemployment rates in Ireland",
-                    message="Show me unemployment rates in Ireland for the last 5 years.",
-                    icon="/public/starters/jobs.svg",
+                    message="Show me detailed statistics on unemployment rates in Ireland for the last 5 years.",
+                    icon="public/starters/jobs.svg",
                 ),
                 cl.Starter(
                     label="Population growth trends",
                     message="What's the population growth trend in Dublin compared to other cities?",
-                    icon="/public/population.svg",
+                    icon="public/starters/population.svg",
                 ),
                 cl.Starter(
                     label="Ireland renewable-energy mix (shares & totals)",
                     message="Give me the breakdown of renewable energy resources as a percentage share and absolute numbers in recent years in Ireland.",
-                    icon="/public/energy.svg",
+                    icon="public/starters/energy.svg",
                     command="code",
                 ),
                 cl.Starter(
                     label="Impact of inflation on spending",
                     message="How has inflation affected consumer spending in the past year?",
-                    icon="/public/inflation.svg",
+                    icon="/public/starters/inflation.svg",
                 )
             ]
             
@@ -116,6 +116,8 @@ async def run_app():
         @cl.on_message
         async def on_message(message: cl.Message):
             msg = cl.Message(content="")
+            pls_wait_msg = cl.Message(content="*Please wait while I process your request...*", author="assistant_message")
+            await pls_wait_msg.send()
 
             config = {"configurable": {"thread_id": cl.user_session.get("user").identifier}}
 
@@ -139,5 +141,6 @@ async def run_app():
                     await msg.stream_token(chunk.content)
 
             await msg.send()
+            await pls_wait_msg.remove()
         
 asyncio.run(run_app())
