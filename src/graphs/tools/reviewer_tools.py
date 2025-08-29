@@ -1,4 +1,5 @@
 import os
+import gc
 import pandas as pd
 from pyjstat import pyjstat
 from textwrap import dedent
@@ -50,8 +51,8 @@ def hybrid_retrieval_tool(
                 ]
             }
         )
-    else:
 
+    else:
         csv_save_dir = "cache/"
         relevant_tables_metadata = []
         contexts_dict = {}
@@ -70,7 +71,10 @@ def hybrid_retrieval_tool(
             
             context_list = create_table_analysis(df, table_id)
             contexts_dict[table_id] = "\n".join(context_list)
-            
+
+            del df
+            gc.collect()
+
         system_message = dedent(
             """\
                 # ROLE: I am a planner agent.
@@ -133,7 +137,7 @@ def hybrid_retrieval_tool(
         )
 
 @tool("data_analyst_tool", parse_docstring=True)
-def data_analyst_tool(
+async def data_analyst_tool(
     table_ids: List[str],
     # question: str,
     state: Annotated[dict, InjectedState],
@@ -164,7 +168,6 @@ def data_analyst_tool(
 
     for relevant_table_metadata in relevant_tables_metadata:
         table_id = relevant_table_metadata["table_id"]
-        # print("XXX", table_id, table_ids)
         if table_id in table_ids:
             analysis_plan = "\n".join(relevant_table_metadata["analysis_plan"])
             context = relevant_table_metadata["context"]
@@ -172,7 +175,7 @@ def data_analyst_tool(
                 {"table_id": table_id, "question": question, "context": context, "analysis_plan": analysis_plan}
             )
 
-    responses = analyst_graph.batch(batch)
+    responses = await analyst_graph.abatch(batch)
 
     content = []
 

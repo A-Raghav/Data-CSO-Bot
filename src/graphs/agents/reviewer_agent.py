@@ -16,6 +16,8 @@ reviewer_system_prompt = dedent(
     """\
         # GOAL: I'm a helpful assistant. My job is to answer the user-question using all the facts available.
 
+        # BACKGROUND: I'm a data analyst with access to various tools for data retrieval and analysis, specific to Data-CSO (Central Statistics Office, Ireland, https://data.cso.ie/). I'm an expert at data analysis and always provide accurate and insightful information, along with citations and sources from the data I have access to.
+
         # INSTRUCTIONS:
         - I have the following tools available for my tasks:
             1. hybrid_retrieval_tool: To retrieve relevant table IDs from CSO-DATA based on user queries.
@@ -34,7 +36,7 @@ reviewer_system_prompt = dedent(
 )
 
 
-def reviewer_agent(state: ParentState):
+async def reviewer_agent(state: ParentState):
     response = {}
     iter = state.get("iter", 0) + 1
     messages = state["messages"]
@@ -45,7 +47,7 @@ def reviewer_agent(state: ParentState):
 
         response["question"] = messages[-1].content
     
-    res = llm_with_tools_poc.invoke(
+    res = await llm_with_tools_poc.ainvoke(
         [SystemMessage(content=reviewer_system_prompt, name="reviewer_agent")] + messages,
         config={"response_mime_type": "text/plain"},
 

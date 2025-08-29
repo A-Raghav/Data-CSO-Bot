@@ -40,7 +40,7 @@ llm_with_code_exec_tool = llm.bind_tools(
     allowed_function_names=["python_code_executor"]
 )
 
-def analyst_node(state: AnalystSubgraphState) -> str:
+async def analyst_node(state: AnalystSubgraphState) -> str:
     """
     The analyst agent has access to the Python-Shell tool and uses it answer the user query by analysing the data available in context.
 
@@ -70,10 +70,10 @@ def analyst_node(state: AnalystSubgraphState) -> str:
         
         if iters <= 10:
             # print("Running data-analyst agent...")
-            res = llm_with_code_exec_tool.invoke(msgs)
+            res = await llm_with_code_exec_tool.ainvoke(msgs)
         else:
             # print("Stopping tool-calls as max-iterations reached. Generating final response...")
-            res = llm.invoke(msgs)
+            res = await llm.ainvoke(msgs)
             return {"messages": [res], "iters": iters, "context": context, "report": report}
 
         if isinstance(res, AIMessage):

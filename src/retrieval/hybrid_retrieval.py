@@ -1,3 +1,4 @@
+import gc
 import json
 import bm25s
 import Stemmer
@@ -99,6 +100,9 @@ class HybridRetrieval:
         }
         df = pd.DataFrame(records)
         top_20_relevant_ids = df.sort_values(by="stage_2_score", ascending=True)[:20]["id"].tolist()
+        
+        del df
+        gc.collect()
 
         if not top_20_relevant_ids:
             return []

@@ -1,3 +1,4 @@
+import gc
 import pandas as pd
 
 
@@ -33,6 +34,8 @@ def create_table_analysis(df: pd.DataFrame, table_id: str) -> dict:
             "- **Table Sample (first and last 5 rows)**:",
             table_sample.to_string(index=False),
         ]
+        del table_info_df
+        gc.collect()
 
     except Exception as e:
         context_list = []
