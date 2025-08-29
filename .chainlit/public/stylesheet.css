@@ -1,0 +1,42 @@
+#new-chat-button {
+  display: none;
+}
+
+/* Hide the logo on all pages */
+img[alt="logo"],
+div[class*="logo"],
+.login-page .logo,
+.logo,
+div[class*="Logo"],
+.Logo,
+div[data-testid*="logo"],
+/* Target specifically the login page top section */
+.login-page > div:first-child > div:first-child,
+.login-page .MuiStack-root:first-child > *:first-child,
+/* Target Material-UI structures often used for logos */
+.MuiBox-root:has(img[alt*="logo"]),
+/* Target any image at the top of forms or containers */
+form:first-of-type div:first-child img:first-child {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove any space that might be reserved for the logo */
+.login-page .MuiBox-root:first-child,
+.login-page .MuiStack-root:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Move the login form higher on the page */
+.login-page form,
+.login-page .MuiPaper-root {
+  margin-top: 2rem !important;
+}
