@@ -39,3 +39,21 @@ StatsIE combines advanced AI capabilities through:
 StatsIE was developed to address the challenges researchers face when working with statistical data from the CSO website. Our mission is to make data more accessible and insights more discoverable.
 
 *Start your data journey with a simple question above!*
+
+___
+
+# Developer Info
+### Building and Uploading Docker image into Google Cloud Artifact Registry
+1. Authenticate gcloud: `gcloud auth configure-docker europe-west2-docker.pkg.dev`
+2. Run: `docker buildx create --use --name xbuilder || true`
+3. Run: `docker buildx build --platform linux/amd64 -t europe-west2-docker.pkg.dev/data-cso-project/quickstart-docker-repo/chainlit_hello_world_app:v0.0.3 --push .` (make sure to change the tag)
+4. Verify the manifest includes amd64: `docker buildx imagetools inspect europe-west2-docker.pkg.dev/data-cso-project/quickstart-docker-repo/chainlit_hello_world_app:v0.0.3`
+
+### Dev-Mode
+- Make sure the following env variables are correctly configured in `.env` file in root:
+    - `GOOGLE_API_KEY`
+    - `CHAINLIT_AUTH_SECRET`
+    - `OAUTH_GOOGLE_CLIENT_ID`
+    - `OAUTH_GOOGLE_CLIENT_SECRET`
+    - `REDIS_URL`
+- After building the above image (remove the `--push` to build the image without pushing it on GCP), run the docker-image using `docker-compose up` and start the `redis-stack` container, and then test if everything is working fine.
