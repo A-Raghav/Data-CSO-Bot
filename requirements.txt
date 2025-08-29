@@ -1,6 +1,9 @@
 # DEV+PROD LIBS
 bm25s[full]
 jax[cpu]
+# bm25s==0.2.13
+# jax==0.7.1
+# jaxlib==0.7.1
 pyjstat==2.4.0
 google-genai==1.31.0
 langchain==0.3.27
