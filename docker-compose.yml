@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    image: data_cso_demo:demo
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://host.docker.internal:6379}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OAUTH_GOOGLE_CLIENT_ID=${OAUTH_GOOGLE_CLIENT_ID}
+      - OAUTH_GOOGLE_CLIENT_SECRET=${OAUTH_GOOGLE_CLIENT_SECRET}
+      - CHAINLIT_AUTH_SECRET=${CHAINLIT_AUTH_SECRET}
+    volumes:
+      - .:/app
+    networks:
+      - langgraph-network
+
+networks:
+  langgraph-network:
+    driver: bridge
