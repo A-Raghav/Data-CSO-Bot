@@ -18,6 +18,8 @@ StatsEye is designed to transform how researchers, analysts, and curious minds i
 3. **Get Insights** - Receive analysis, insights, and Data-CSO citations directly in the chat
 4. **Build on Results** - Ask follow-up questions based on the information provided
 
+Try [StatsEye-Assistant](https://statseye-assistant.com) now!
+
 ## Behind the Technology ⚙️
 
 StatsEye combines advanced AI capabilities through:
