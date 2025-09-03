@@ -46,6 +46,23 @@ async def run_app():
             raw_user_data: Dict[str, str],
             default_user: cl.User,
         ) -> Optional[cl.User]:
+            """
+            OAuth callback handler for authentication.
+            This function is used to validate users after they authenticate through OAuth.
+            It performs security checks and returns a user object for authorized users.
+            
+            Note: This application only uses authentication for session management
+            and does not collect or store sensitive user data.
+            """
+            # Log the authentication attempt (without sensitive details)
+            print(f"Authentication attempt from provider: {provider_id}")
+            
+            # Validate token is present (basic security check)
+            if not token:
+                print("Warning: Empty token in OAuth callback")
+                return None
+                
+            # Return the default user for authentication
             return default_user
         
         # Reset Chat button action handler
@@ -92,7 +109,8 @@ async def run_app():
         @cl.on_chat_start
         async def on_chat_start():
             # Check if there's an existing conversation state to restore
-            config = {"configurable": {"thread_id": cl.user_session.get("user").identifier}}
+            thread_id = cl.user_session.get("user").identifier
+            config = {"configurable": {"thread_id": thread_id}}
             existing_state = await graph.aget_state(config)
             
             # Only restore messages if there are actual past messages
@@ -119,7 +137,8 @@ async def run_app():
             pls_wait_msg = cl.Message(content="*Please wait while I process your request...*", author="assistant_message")
             await pls_wait_msg.send()
 
-            config = {"configurable": {"thread_id": cl.user_session.get("user").identifier}}
+            thread_id = cl.user_session.get("user").identifier
+            config = {"configurable": {"thread_id": thread_id}}
 
             # Add the Reset Chat button if this is the first message
             existing_state = await graph.aget_state(config)

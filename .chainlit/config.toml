@@ -125,14 +125,14 @@ alert_style = "classic"
 # Specify a custom meta image url.
 # custom_meta_image_url = "https://chainlit-cloud.s3.eu-west-3.amazonaws.com/logo/chainlit_banner.png"
 
-# Load assistant logo directly from URL.
-# Set to empty string to use no logo
-logo_file_url = ""
-# Set hide_logo to true to completely remove the logo
-hide_logo = true
+# Load assistant logo directly from URL or local path
+# Use our custom StatsEye logo
+logo_file_url = "/public/data-cso-app-logo.png"
+# Show the logo properly
+hide_logo = false
 
 # Load assistant avatar image directly from URL.
-default_avatar_file_url = ""
+default_avatar_file_url = "/public/data-cso-app-logo.png"
 
 # Specify a custom build directory for the frontend.
 # This can be used to customize the frontend code.

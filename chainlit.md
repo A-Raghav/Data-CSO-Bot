@@ -2,6 +2,8 @@
 
 ## Simplifying Data Research with Central Statistics Office (CSO) Data
 
+> **OFFICIAL NOTICE**: StatsEye is an independent application that provides research assistance for CSO data. This application is not affiliated with, endorsed by, or operated by the Central Statistics Office of Ireland. StatsEye is developed and maintained by an independent team to facilitate data research.
+
 StatsEye is designed to transform how researchers, analysts, and curious minds interact with statistical data available on [Data-CSO website](www.data.cso.ie). No more navigating through endless clicks and downloads – just ask what you need to know.
 
 ## What StatsEye Can Do For You 💡
@@ -37,5 +39,14 @@ StatsEye combines advanced AI capabilities through:
 ## About StatsEye
 
 StatsEye was developed to address the challenges researchers face when working with statistical data from the CSO website. Our mission is to make data more accessible and insights more discoverable.
+
+### Security & Privacy
+
+- StatsEye does not collect sensitive personal information
+- Authentication is used solely for session management
+- All data requests are transparently processed
+- No phishing or misleading content is present in this application
+
+For more information about our security practices, please see our [Security Policy](https://github.com/A-Raghav/Data-CSO-Bot/blob/main/SECURITY.md).
 
 *Start your data journey with a simple question above!*

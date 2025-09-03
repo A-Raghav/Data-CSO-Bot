@@ -2,41 +2,51 @@
   display: none;
 }
 
-/* Hide the logo on all pages */
-img[alt="logo"],
-div[class*="logo"],
-.login-page .logo,
-.logo,
-div[class*="Logo"],
-.Logo,
-div[data-testid*="logo"],
-/* Target specifically the login page top section */
-.login-page > div:first-child > div:first-child,
-.login-page .MuiStack-root:first-child > *:first-child,
-/* Target Material-UI structures often used for logos */
-.MuiBox-root:has(img[alt*="logo"]),
-/* Target any image at the top of forms or containers */
-form:first-of-type div:first-child img:first-child {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  width: 0 !important;
-  height: 0 !important;
-  position: absolute !important;
-  overflow: hidden !important;
-  margin: 0 !important;
-  padding: 0 !important;
+/* StatsEye branding styles */
+.statsEye-branding {
+  text-align: center;
+  padding: 20px 0;
+  margin-bottom: 20px;
 }
 
-/* Remove any space that might be reserved for the logo */
-.login-page .MuiBox-root:first-child,
-.login-page .MuiStack-root:first-child {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+.statsEye-branding img {
+  max-height: 80px;
+  display: block;
+  margin: 0 auto 10px;
 }
 
-/* Move the login form higher on the page */
+.statsEye-branding h1 {
+  font-size: 24px;
+  margin: 10px 0;
+  color: #1a3d66;
+}
+
+.statsEye-branding p {
+  font-size: 16px;
+  margin: 0 0 20px 0;
+  color: #555;
+}
+
+/* Login page styling */
+.login-page {
+  max-width: 450px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
 .login-page form,
 .login-page .MuiPaper-root {
-  margin-top: 2rem !important;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Add a notice at the bottom of the login form */
+.login-page form::after {
+  content: "StatsEye - A Data Research Assistant for CSO Statistics";
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #777;
 }
