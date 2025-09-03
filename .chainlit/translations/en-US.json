@@ -18,7 +18,7 @@
     },
     "auth": {
         "login": {
-            "title": "Login to access the app",
+            "title": "Login to access the StatsEye-Assistant",
             "form": {
                 "email": {
                     "label": "Email address",
