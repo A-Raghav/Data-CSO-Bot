@@ -133,6 +133,7 @@ async def run_app():
                         await msg.send()
         @cl.on_message
         async def on_message(message: cl.Message):
+            start = time.time()
             msg = cl.Message(content="")
             pls_wait_msg = cl.Message(content="*Please wait while I process your request...*", author="assistant_message")
             await pls_wait_msg.send()
@@ -151,15 +152,20 @@ async def run_app():
                 )
                 await reset_msg.send()                
 
+            streaming_started = False
             async for chunk, metadata in graph.astream(
                 input={"messages": [HumanMessage(content=message.content, name="user")]},
                 stream_mode="messages",
                 config=config
             ):
                 if chunk.content and metadata["langgraph_node"] == "reviewer_agent" and isinstance(chunk, AIMessageChunk):
+                    if not streaming_started:
+                        await pls_wait_msg.remove()
+                        await cl.Message(f"*Thought for {round(time.time() - start, 2)} seconds...*").send()
+                        streaming_started = True
                     await msg.stream_token(chunk.content)
 
             await msg.send()
-            await pls_wait_msg.remove()
+            
         
 asyncio.run(run_app())
