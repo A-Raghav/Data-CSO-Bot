@@ -3,7 +3,7 @@ from google.genai import types
 
 
 def get_llm(
-    model: str = "gemini-2.5-flash-lite",
+    model: str = "gemini-2.5-flash",
     temperature: float = 0.5,
     max_tokens: int = None,
     timeout: float = None,

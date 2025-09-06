@@ -9,7 +9,7 @@ from src.graphs.tools.reviewer_tools import hybrid_retrieval_tool, data_analyst_
 
 
 TOOLS = [hybrid_retrieval_tool, data_analyst_tool, provenance_tool]
-llm = get_llm(model="gemini-2.5-flash-lite")
+llm = get_llm(model="gemini-2.5-flash")
 llm_with_tools_poc = llm.bind_tools(TOOLS)
 
 reviewer_system_prompt = dedent(
