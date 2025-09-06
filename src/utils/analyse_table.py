@@ -26,12 +26,12 @@ def create_table_analysis(df: pd.DataFrame, table_id: str) -> dict:
         })
 
         context_list = [
-            f"**Table ID:** {table_id}",
-            f"- **CSV File Path**: {csv_fp}",
-            f"- **Table Shape**: {table_shape}",
-            "- **Table Info**:",
+            # f"**Table ID:** {table_id}",
+            # f"- **CSV File Path**: {csv_fp}",
+            f"**Table Shape**: {table_shape}",
+            "**Table Info**:",
             table_info_df.to_string(index=False),
-            "- **Table Sample (first and last 5 rows)**:",
+            "**Table Sample (first and last 5 rows)**:",
             table_sample.to_string(index=False),
         ]
         del table_info_df

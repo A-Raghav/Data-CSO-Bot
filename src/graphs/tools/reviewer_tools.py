@@ -46,100 +46,32 @@ def hybrid_retrieval_tool(
                     ToolMessage(
                         content="No relevant tables found.",
                         tool_call_id=tool_call_id,
-                        name="relevant_tables_metadata",
+                        name="hybrid_retrieval_tool",
                     )
                 ]
             }
         )
 
     else:
-        csv_save_dir = "cache/"
-        relevant_tables_metadata = []
-        contexts_dict = {}
-
-
-        for table_id in relevant_tables_ids:
-            csv_fp = csv_save_dir + f"{table_id}.csv"
-
-            # check if "<table_id>.csv" exists. If not, read the pyjstat-file from artifacts and save the DataFrame as "<table_id>.csv"
-            if not os.path.exists(csv_fp):
-                for _, ds, _ in cso_archive_reader.read("artifacts/cso_bkp/cso_archive/jsonstat_archive.sqlite", table_id=table_id, with_labels=True):
-                    df: pd.DataFrame = pyjstat.from_json_stat(ds)[0]
-                df.to_csv(csv_fp, index=False)
-            else:
-                df = pd.read_csv(csv_fp)
-            
-            context_list = create_table_analysis(df, table_id)
-            contexts_dict[table_id] = "\n".join(context_list)
-
-            del df
-            gc.collect()
-
-        system_message = dedent(
-            """\
-                # ROLE: I am a planner agent.
-
-                # RETURN FORMAT (Pydantic):
-                    - table_id: str = Field(description="The ID of the table.")
-                    - analysis_plan: list[str] = Field(description="The low-level analysis plan for the table-ID. Contains a list of steps.")
-                ```
-
-                # INSTRUCTIONS:
-                - Create a high-level plan for the data-analyst agent to carry out its analysis step-by-step.
-                - Be concise, do not go over 3-4 steps.
-            """
-        )
-
-        inputs = []
-        for table_id in relevant_tables_ids:
-            context = contexts_dict[table_id]
-            human_message = f"Question : {user_prompt}\n\n Context:\n{context}"
-            inputs.append((SystemMessage(content=system_message, name="planner_agent"), HumanMessage(content=human_message, name="user")))
-
-        msgs = llm.with_structured_output(AnalysisPlanSubModel).batch(inputs)
-        res_list = [msg.model_dump() for msg in msgs]
-
-        # print(f"HYBRID_RETRIEVAL_TOOL: Planner agent created analysis plans for {len(res_list)} tables.")
-        for res_dict in res_list:
-            table_id = res_dict["table_id"]
-            analysis_plan = res_dict["analysis_plan"]
-
-            if table_id in relevant_tables_ids:
-                relevant_tables_metadata.append(
-                    {
-                        "table_id": table_id,
-                        "context": contexts_dict.get(table_id, ""),
-                        "analysis_plan": analysis_plan
-                    }
-                )
-
-        tool_message_list = []
-        for relevant_table_metadata in relevant_tables_metadata:
-            tool_message_list.append(f"Table ID: {relevant_table_metadata['table_id']}")
-            tool_message_list.append(f"Context: {relevant_table_metadata['context']}")
-            tool_message_list.append(f"Analysis Plan: {relevant_table_metadata['analysis_plan']}")
-            tool_message_list.append("")
-
-        tool_message = "\n".join(tool_message_list)
-
         return Command(
             update={
-                "relevant_tables_metadata": relevant_tables_metadata,
+                "relevant_tables_metadata": {table_id: {} for table_id in relevant_tables_ids},
                 "messages": [
                     ToolMessage(
                         # content=tool_message,
                         content=f"Found {len(relevant_tables_ids)} relevant tables. The table-IDs are: {', '.join(relevant_tables_ids)}",
                         tool_call_id=tool_call_id,
-                        name="relevant_tables_metadata"
+                        name="hybrid_retrieval_tool"
                     )
                 ]
             }
         )
 
+
 @tool("data_analyst_tool", parse_docstring=True)
 async def data_analyst_tool(
     table_ids: List[str],
-    # question: str,
+    question: str,
     state: Annotated[dict, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ):
@@ -154,30 +86,108 @@ async def data_analyst_tool(
     Returns:
         Command: The command to update the chat with the data analyst's response.
     """
-    question = state["question"]
-    relevant_tables_metadata = state["relevant_tables_metadata"]
-    reports_dict = state.get("reports", {})
+    table_ids = [table_id for table_id in table_ids if table_id in state["relevant_tables_metadata"]]
 
-    for relevant_table_metadata in relevant_tables_metadata:
-        if relevant_table_metadata["table_id"] in table_ids:
-            analysis_plan = "\n".join(relevant_table_metadata["analysis_plan"])
-            context = relevant_table_metadata["context"]
-            break
+    if not table_ids:
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        content=f"No relevant tables found for analysis. Please invoke the `hybrid_retrieval_tool` first.",
+                        tool_call_id=tool_call_id,
+                        name="data_analyst_tool",
+                    )
+                ]
+            }
+        )
     
-    batch = []
+    # step-1: prepare the static context for the data-analyst agent, if not already done
+    csv_save_dir = "cache/"
+    contexts_dict = {}
+    relevant_tables_metadata = {}
 
-    for relevant_table_metadata in relevant_tables_metadata:
-        table_id = relevant_table_metadata["table_id"]
+    for table_id in table_ids:
+        if state["relevant_tables_metadata"][table_id].get("context", None):
+            relevant_tables_metadata[table_id]["context"] = state["relevant_tables_metadata"][table_id]["context"]
+        else:
+            csv_fp = csv_save_dir + f"{table_id}.csv"
+
+            # check if "<table_id>.csv" exists. If not, read the pyjstat-file from artifacts and save the DataFrame as "<table_id>.csv"
+            if not os.path.exists(csv_fp):
+                for _, ds, _ in cso_archive_reader.read("artifacts/cso_bkp/cso_archive/jsonstat_archive.sqlite", table_id=table_id, with_labels=True):
+                    df: pd.DataFrame = pyjstat.from_json_stat(ds)[0]
+                df.to_csv(csv_fp, index=False)
+            else:
+                df = pd.read_csv(csv_fp)
+            
+            # create analysis context from the CSV file
+            csv_context_list = create_table_analysis(df, table_id)
+
+            # create analysis context from the JSON-Stat file metadata (stored in the vector-store)
+            doc = retriever.vector_store.docstore.search(table_id)
+            json_context_list = [
+                f"**Table ID**: {doc.id}",
+                f"**Table Name (and Category)**: {doc.metadata['table_name']} ({doc.metadata['subject']}: {doc.metadata['product']})",
+                f"**CSV File Path**: {csv_fp}",
+                f"**Statistics-Units**: {', '.join(doc.metadata['statistics_units'])}",
+            ]
+
+            contexts_dict[table_id] = "\n".join(json_context_list + csv_context_list)
+
+            del df
+            gc.collect()
+
+            relevant_tables_metadata[table_id] = {
+                "context": contexts_dict[table_id]
+            }
+
+    
+    # step-2: prepare the plan for the data-analyst agent, overwriting any existing plan
+    system_message = dedent(
+        """\
+            # ROLE: I am a planner agent.
+
+            # RETURN FORMAT (Pydantic):
+                - table_id: str = Field(description="The ID of the table.")
+                - analysis_plan: list[str] = Field(description="The low-level analysis plan for the table-ID. Contains a list of steps.")
+
+            # INSTRUCTIONS:
+            - Create a high-level plan for the data-analyst agent to carry out its analysis step-by-step.
+            - Be concise, do not go over 3-4 steps.
+        """
+    )
+
+    inputs = []
+    for table_id in table_ids:
+        context = contexts_dict[table_id]
+        human_message = f"Question : {question}\n\n Context:\n{context}"
+        inputs.append((SystemMessage(content=system_message, name="planner_agent"), HumanMessage(content=human_message, name="user")))
+
+    msgs = llm.with_structured_output(AnalysisPlanSubModel).batch(inputs)
+
+    res_list = [msg.model_dump() for msg in msgs]
+
+    for res_dict in res_list:
+        table_id = res_dict["table_id"]
+        analysis_plan = res_dict["analysis_plan"]
+
         if table_id in table_ids:
-            analysis_plan = "\n".join(relevant_table_metadata["analysis_plan"])
-            context = relevant_table_metadata["context"]
-            batch.append(
-                {"table_id": table_id, "question": question, "context": context, "analysis_plan": analysis_plan}
-            )
+            relevant_tables_metadata[table_id]["analysis_plan"] = analysis_plan
+    
 
+    # step-3: invoke the data-analyst agent asynchronously in batch-mode
+    batch = []
+    for table_id in table_ids:
+        context = relevant_tables_metadata[table_id]["context"]
+        analysis_plan = relevant_tables_metadata[table_id]["analysis_plan"]
+        batch.append(
+            {"table_id": table_id, "question": question, "context": context, "analysis_plan": analysis_plan}
+        )
     responses = await analyst_graph.abatch(batch)
 
+    # step-4: prepare the final response to return
     content = []
+    reports_dict = state.get("reports", {})
 
     for i in range(len(responses)):
         table_id = batch[i]["table_id"]
