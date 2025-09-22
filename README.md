@@ -22,7 +22,8 @@ Try [StatsEye-Assistant](https://statseye-assistant.com) now!
 
 ## Behind the Technology ⚙️
 
-![](./public/Data-CSO-Gif-Vid.gif)
+![](./assets/Data-CSO-Gif-Vid.gif)
+
 StatsEye combines advanced AI capabilities through:
 
 - **Intelligent Agent Framework** - Built with LangGraph to provide reasoning and context-aware responses
